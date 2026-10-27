@@ -1,0 +1,61 @@
+@startuml
+title Arquitectura de escritorio - dependencias del código actual
+skinparam componentStyle rectangle
+package app {
+  [Aplicacion] as Inicio
+  [DemoModelo / pruebas / DatosEjemplo] as Auxiliares
+}
+package ui {
+  [VentanaClinica\nSwing + FlatLaf\nSwingWorker / EDT] as UI
+}
+package servicio {
+  [Clinica\nCRUD / reportes / respaldo] as Servicio
+  [Clinica.MonitorSeguimiento] as Monitor
+}
+package persistencia {
+  [Repositorios SQLite\nConexionSQLite] as JDBC
+  [Respaldo] as Respaldo
+}
+package concurrencia {
+  [TareaPeriodica] as Tarea
+}
+package eventos {
+  [Evento / TipoEvento / OyenteEvento] as Eventos
+}
+package funcional {
+  [Regla / Reglas / FabricaElemento] as Funcional
+}
+package modelo {
+  [Tipos del dominio / CatalogoProcedimientos] as Modelo
+}
+database "datos.db" as DB
+file "respaldo.bin" as BIN
+Inicio --> UI
+Inicio --> Servicio
+Auxiliares --> Servicio
+Auxiliares --> JDBC
+UI --> Servicio
+UI --> Modelo
+Servicio --> JDBC
+Servicio --> Respaldo
+Servicio --> Modelo
+Servicio --> Funcional
+Servicio --> Eventos
+Servicio +-- Monitor
+Monitor --|> Tarea
+JDBC --> Modelo
+Respaldo --> Modelo
+Funcional --> Modelo
+Modelo --> Funcional : Catálogo usa Regla<T>
+JDBC ..> DB
+Respaldo ..> BIN
+note bottom of UI
+  Los eventos vuelven al EDT mediante invokeLater.
+  Las operaciones largas se ejecutan en segundo plano.
+  No hay SQL ni acceso JDBC en la UI.
+end note
+note bottom of Funcional
+  modelo <-> funcional refleja el acoplamiento
+  presente en el esqueleto proporcionado.
+end note
+@enduml
