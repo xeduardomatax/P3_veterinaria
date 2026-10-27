@@ -1,0 +1,6 @@
+La ejecución recomendada usa Maven o el JAR con dependencias de target/.
+Para compilar con compilar.sh sin Maven, coloca aquí:
+- sqlite-jdbc-3.46.1.3.jar (org.xerial:sqlite-jdbc)
+- slf4j-api-1.7.36.jar (dependencia de SQLite JDBC)
+- flatlaf-3.5.4.jar (com.formdev:flatlaf)
+No se requieren estas copias para mvn package ni para el JAR empaquetado.

@@ -1,0 +1,10 @@
+target/
+out/
+.tools/
+tmp/
+*.db-journal
+*.db-wal
+*.db-shm
+.idea/
+.vscode/
+*.log
