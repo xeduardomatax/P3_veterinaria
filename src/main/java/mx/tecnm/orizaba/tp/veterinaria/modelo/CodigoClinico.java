@@ -22,15 +22,20 @@ public record CodigoClinico(String prefijo, int numero) implements Comparable<Co
         SECUENCIAS = new ConcurrentHashMap<>();
     }
 
-    /** Valida el prefijo de tres mayúsculas y el número positivo. */
+    /** Valida el prefijo de tres mayúsculas y un número de cuatro dígitos. */
     public CodigoClinico {
-        if (prefijo == null || !prefijo.matches("[A-Z]{3}") || numero <= 0) throw new IllegalArgumentException("Código clínico inválido");
+        if (prefijo == null || !prefijo.matches("[A-Z]{3}") || (numero <= 0 || numero > 9999)) throw new IllegalArgumentException("Código clínico inválido: se requieren cuatro dígitos (0001 a 9999)");
     }
 
     /** Genera la siguiente clave del prefijo indicado (operación atómica). */
     public static CodigoClinico siguiente(String prefijo) {
         if (prefijo == null || !prefijo.matches("[A-Z]{3}")) throw new IllegalArgumentException("Prefijo inválido");
-        return new CodigoClinico(prefijo, SECUENCIAS.computeIfAbsent(prefijo, k -> new AtomicInteger()).incrementAndGet());
+        int numero = SECUENCIAS.computeIfAbsent(prefijo, k -> new AtomicInteger())
+                .updateAndGet(anterior -> {
+                    if (anterior >= 9999) throw new IllegalStateException("Se agotaron las claves del prefijo " + prefijo);
+                    return anterior + 1;
+                });
+        return new CodigoClinico(prefijo, numero);
     }
 
     /** Ajusta la secuencia para que nunca genere una clave ya existente (p. ej., tras leer la BD). */
@@ -40,7 +45,7 @@ public record CodigoClinico(String prefijo, int numero) implements Comparable<Co
 
     /** Convierte un texto {@code ABC-0001} en una clave. */
     public static CodigoClinico parse(String texto) {
-        if (texto == null || !texto.matches("[A-Z]{3}-\\d{4,}")) throw new IllegalArgumentException("Formato esperado: ABC-0001");
+        if (texto == null || !texto.matches("[A-Z]{3}-[0-9]{4}")) throw new IllegalArgumentException("Formato esperado: ABC-0001");
         return new CodigoClinico(texto.substring(0, 3), Integer.parseInt(texto.substring(4)));
     }
 

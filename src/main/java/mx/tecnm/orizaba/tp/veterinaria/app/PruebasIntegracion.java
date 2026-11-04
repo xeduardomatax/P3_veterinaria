@@ -68,6 +68,8 @@ public final class PruebasIntegracion {
         System.out.println("Integración: CRUD, reportes, respaldo, límites del monitor y rollback aprobados");
     }
 
+    // El cierre anticipado es deliberado: simula una escritura sobre una conexión cerrada.
+    @SuppressWarnings("try")
     private static void verificarFalloEscritura() {
         try (ConexionSQLite bd = new ConexionSQLite(":memory:"); Clinica c = new Clinica(bd)) {
             var p = c.registrarPropietario("Ana", "ana@example.com", Nivel.GENERAL);

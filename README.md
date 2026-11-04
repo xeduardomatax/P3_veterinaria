@@ -1,80 +1,105 @@
 # Control de Atenciones de una Clínica Veterinaria
 
-Aplicación de escritorio del Miniproyecto Java 3, basada en los requisitos RF01–RF08 y la lista de cotejo del PDF. Java 21, Maven, SQLite JDBC 3.46.1.3 y paquete raíz `mx.tecnm.orizaba.tp.veterinaria`.
+**TecNM - Instituto Tecnológico de Orizaba | Maestría en Sistemas Computacionales**  
+**Tecnologías de Programación · Miniproyecto Java 3**
 
-## Compilar y ejecutar
+Aplicación de escritorio para gestionar procedimientos veterinarios, propietarios y atenciones, desarrollada con **Java 21**, **Swing + FlatLaf**, **SQLite** y **Maven**. El proyecto sigue los requisitos RF01-RF08 del documento de 11 páginas y mantiene la organización de paquetes `mx.tecnm.orizaba.tp.veterinaria`.
 
-Instala JDK 21 y Maven. La primera compilación necesita descargar las dependencias.
+## Capturas de pantalla
+
+Estas imágenes pertenecen a la aplicación de escritorio incluida en este repositorio. GitHub las muestra directamente porque están guardadas en `docs/capturas/` y se usan rutas relativas.
+
+### Gestión de atenciones
+
+![Pantalla de atenciones: estados, procedimientos y totales](docs/capturas/atenciones.png)
+
+### Catálogos del sistema
+
+| Procedimientos | Propietarios |
+|:--:|:--:|
+| ![Pantalla del catálogo de procedimientos](docs/capturas/procedimientos.png) | ![Pantalla de propietarios y niveles de descuento](docs/capturas/propietarios.png) |
+
+### Resultados y seguimiento
+
+| Reportes | Bitácora de eventos |
+|:--:|:--:|
+| ![Pantalla de reportes de ingresos y estadísticas](docs/capturas/reportes.png) | ![Pantalla de eventos y seguimiento](docs/capturas/eventos.png) |
+
+> **Nota:** las capturas ilustran la interfaz con los datos de ejemplo; se mantienen como archivos PNG para visualizarlas en GitHub sin instalar ni ejecutar el programa.
+
+
+## 1. Requisitos para ejecutar
+
+- JDK 21, con `java -version` y `javac -version` mostrando la versión 21.
+- Apache Maven configurado en PATH (`mvn -version` debe usar Java 21).
+- Conexión a Internet la primera vez para descargar `sqlite-jdbc 3.46.1.3`, FlatLaf 3.5.4 y los plugins Maven.
+- Windows, Linux o macOS con escritorio gráfico. Se recomienda Visual Studio Code con Extension Pack for Java.
+
+## 2. Compilación y apertura (Windows PowerShell)
+
+Abre una terminal **dentro de la carpeta extraída** `P3_veterinaria` y ejecuta:
 
 ```powershell
-mvn -q package
+mvn clean package
 java -jar target/veterinaria-1.0.0.jar
 ```
 
-Para abrir desde Maven:
+El comando Maven compila con `-Xlint:all -Werror`, ejecuta las 14 pruebas de aceptación originales y las pruebas propias, y crea un JAR ejecutable con dependencias. `java -jar` abre la interfaz usando `datos.db` (en el directorio desde el que se ejecuta). **No borres `datos.db`**: contiene los datos solicitados. Para utilizar otra base: `java -jar target/veterinaria-1.0.0.jar otra-clinica.db`.
 
-```powershell
-mvn -q compile exec:java -Pescritorio
-```
+Comandos adicionales: `mvn -q compile`; `mvn -q exec:java` (14 pruebas originales); `mvn -q exec:java -Pdemo` (consola); `mvn -q compile exec:java -Pescritorio`; `mvn -q test` (pruebas originales y ampliadas). Más ayuda en [COMANDOS.md](COMANDOS.md).
 
-Se utiliza `datos.db` en el directorio de ejecución. La base de ejemplo contiene al menos 6 procedimientos, 3 propietarios y 4 atenciones en estados distintos. Para trabajar en otra base:
+## 3. Pantallas y requisitos
 
-```powershell
-java -jar target/veterinaria-1.0.0.jar mi-clinica.db
-```
+| Pantalla | Función | Requisito |
+|---|---|---|
+| Procedimientos | CRUD para Vacuna, Consulta y Cirugía; clave autogenerada VAC/CON/CIR-0001; respaldo y restauración del catálogo | RF01, RF06 |
+| Propietarios | Alta, consulta, edición, eliminación y correo único; niveles General, Plan de salud y Rescatista | RF02 |
+| Atenciones | Abrir, añadir/quitar líneas, iniciar, concluir, cancelar, eliminar y consultar montos | RF03, RF04 |
+| Reportes | Ingresos por tipo, cerradas/no cerradas, estadísticas de tarifas y top N rentable | RF07 |
+| Bitácora de eventos | Altas, cambios, cancelaciones automáticas y avisos en tiempo real | RF05, RF08 |
 
-Comandos del documento:
+El modelo valida las reglas, no la interfaz. El monitor se ejecuta cada 30 segundos en la aplicación gráfica y se detiene de forma cooperativa al cerrar. La UI no accede a JDBC ni contiene SQL. Las operaciones potencialmente lentas corren fuera del hilo de eventos Swing (EDT) y actualizan los controles al finalizar.
 
-```powershell
-mvn -q compile
-mvn -q exec:java
-mvn -q exec:java -Pdemo
-```
+## 4. Modelo de negocio
 
-`exec:java` ejecuta las 14 pruebas originales. `mvn -q test` ejecuta además integración y concurrencia; las pruebas usan bases temporales. Las firmas públicas y las pruebas originales se conservan.
+- Vacuna: tarifa = precio base por unidades; propiedad `biologico` no vacía.
+- Consulta: tarifa = precio base por unidades por `(1 + 0.25 * (prioridad - 1))`; prioridad entre 1 y 3.
+- Cirugía: dos primeras sesiones a tarifa completa y posteriores al 60 %; horas de quirófano positivas.
+- Descuentos: General 0 %, Plan de salud 12 %, Rescatista 30 %.
+- Estados: `ABIERTA` (Registrada) → `EN_CURSO` (En atención) → `CERRADA` (Concluida); desde Abierta o En curso se permite Cancelada. Las líneas se editan sólo en Abierta y para iniciar debe existir al menos una.
+- Monitor: cancela una atención Abierta sin líneas al cumplir un día y emite una sola alerta por atención En curso con más de tres días durante la sesión activa.
+- Códigos clínicos: tres letras mayúsculas, guion y exactamente cuatro dígitos (0001 a 9999); los subtipos requieren el prefijo correcto.
 
-## Funciones requeridas
+## 5. Arquitectura
 
-| Requisito | Operación |
-|---|---|
-| RF01 | Procedimientos: registrar, consultar, modificar y eliminar vacunas, consultas y cirugías con clave automática. |
-| RF02 | Propietarios: nombre, correo único y nivel General, Plan de salud o Rescatista. Edición y eliminación para E1. |
-| RF03 | Atenciones: abrir, agregar/quitar líneas, iniciar, concluir o cancelar. Eliminación para E1. |
-| RF04 | Subtotal por tarifa polimórfica y total con descuento de 0 %, 12 % o 30 %. |
-| RF05 | Monitor: cancelar registradas sin líneas desde un día y alertar una vez las que están en atención por más de tres días. |
-| RF06 | SQLite al reiniciar; respaldo binario y restauración del catálogo. |
-| RF07 | Ingresos por tipo, concluidas/no concluidas, estadísticas de tarifas de una sesión y N procedimientos más rentables. |
-| RF08 | Cinco pantallas y bitácora de eventos en tiempo real mediante Clinica. |
+- `modelo`: entidades, interfaces, enumeraciones, cálculo de tarifas y validaciones.
+- `funcional`: reglas composables y fábrica genérica.
+- `eventos`: publicación y escucha de eventos.
+- `concurrencia`: hilo periódico cooperativo.
+- `persistencia`: JDBC, repositorios, transacciones y serialización.
+- `servicio`: fachada única `Clinica`, donde viven los casos de uso y reportes.
+- `ui`: interfaz Swing que sólo utiliza la fachada y tipos del dominio.
+- `app`: pruebas, demostración, datos de ejemplo y punto de entrada.
 
-Las líneas sólo se editan en estado Registrada. Para iniciar se requiere al menos una línea. Concluida y Cancelada son terminales. No se eliminan procedimientos ni propietarios referenciados por atenciones.
+El catálogo se respalda en binario y su restauración **fusiona** procedimientos con el mismo tipo/clave sin borrar el resto de la base. La fusión utiliza una transacción SQLite. Hay un acoplamiento entre `modelo` y `funcional` en el contrato original `filtrar(Regla)`; se conserva esa firma, conforme a la prohibición del documento de modificar firmas públicas, y se declara la limitación A16 en lugar de ocultarla.
 
-Las tarifas siguen la sección 6: vacunas por dosis; consultas con 25 % adicional por nivel de prioridad; cirugías con las sesiones posteriores a la segunda al 60 %. `tarifaConImpuesto` aplica 16 %; los totales de atención siguen el descuento y las pruebas proporcionadas.
+Swing + FlatLaf se eligió porque permite una aplicación instalable sin servidor, tablas, pestañas y cuadros de diálogo. Su limitación es que requiere escritorio gráfico; se resolvió la coordinación de hilos con `SwingWorker`, un ejecutor serializado y `SwingUtilities.invokeLater`.
 
-El respaldo conserva el formato original: catálogo, propietarios y atenciones. **Restaurar catálogo** agrega claves ausentes y actualiza las coincidentes del mismo tipo. Conserva los procedimientos adicionales y las atenciones actuales; no restaura toda la base.
+## 6. Datos de ejemplo
 
-## Interfaz y diseño
+`datos.db` contiene **6 procedimientos, 3 propietarios y 4 atenciones**, una Registrada, una En atención, una Concluida y una Cancelada. El archivo incluye las cuatro tablas del esquema solicitado. La fecha de las atenciones de ejemplo es 2026-10-27; la atención En curso genera aviso después del plazo al abrir la aplicación en una fecha posterior, sin cambiar su estado. Puedes generar una base nueva para practicar con `DatosEjemplo` o usar un archivo `.db` diferente para no afectar la evidencia.
 
-Swing + FlatLaf ofrece tablas y formularios sin servidor. Requiere un entorno gráfico y administrar explícitamente el hilo de eventos. Las consultas, escrituras y archivos se ejecutan mediante SwingWorker en un ejecutor de un hilo; las actualizaciones visuales se realizan en el EDT y los eventos usan SwingUtilities.invokeLater. El cierre detiene el monitor con interrupt/join fuera del EDT y cierra SQLite.
+## 7. Evidencias y entrega
 
-Se abre una única Clinica. La UI consume sus casos de uso y los tipos del modelo; no ejecuta SQL ni crea JDBC. El monitor de la ventana revisa cada 30 segundos; la fachada permite configurar el período e inyectar Supplier<LocalDate> para pruebas.
+- [Diagrama de clases editable](diagramas/modelo.puml) e [imagen](diagramas/modelo.png).
+- [Diagrama de arquitectura](diagramas/arquitectura.puml) e [imagen](diagramas/arquitectura.png).
+- Capturas visibles en la sección **Capturas de pantalla** de este README (archivos en [`docs/capturas/`](docs/capturas/)).
+- [Bitácora de uso de IA](BITACORA_IA.md) (revisar su contenido y fechas antes de publicar).
+- [Matriz de cumplimiento y validación](docs/CUMPLIMIENTO.md).
+- [Comandos paso a paso](COMANDOS.md).
+- [Guía para publicar el proyecto en GitHub](PUBLICAR_EN_GITHUB.md).
+- El historial Git original se conserva, sin crear commits retrospectivos. Los cambios de esta entrega quedan **sin confirmar** para que el autor los revise antes de registrar su propio commit.
 
-Se mantienen la jerarquía sellada, los tipos internos, las interfaces funcionales, los bloques de inicialización, los repositorios con transacciones y batch, Serializable, transient y Externalizable exigidos por el PDF.
+**Estado de pruebas:** La bitácora original documenta una ejecución Maven exitosa el 02/11/2026 con 14/14. En la revisión externa del 03/11/2026 se compiló todo el código Java con JDK 21, `-Xlint:all -Werror` usando una clase auxiliar temporal para el tema FlatLaf, y se aprobaron T01-T10 junto con una regresión de códigos. Aquí no fue posible repetir T11-T14 ni `mvn package` porque no están disponibles Maven ni el controlador SQLite JDBC. Esta limitación del entorno no equivale a una falla demostrada del proyecto; **repite `mvn clean package` en tu equipo antes de entregar**.
 
-**Limitación A16:** el contrato original `CatalogoProcedimientos.filtrar(Regla)` introduce una dependencia modelo → funcional, mientras Reglas y FabricaElemento dependen del modelo. Se conserva para respetar las firmas públicas del apartado 7.1; por ello no se declara cumplido el requisito de dependencias acíclicas. Resolverlo requiere autorizar un cambio de contrato o de ubicación de tipos.
-
-## Entregables
-
-- Diagrama actualizado: [modelo](diagramas/modelo.png), [fuente PlantUML](diagramas/modelo.puml) y [arquitectura](diagramas/arquitectura.png).
-- [Bitácora de uso de IA](BITACORA_IA.md).
-- [Guion de video y defensa](docs/GUION_VIDEO.md).
-- Base de ejemplo: `datos.db`.
-
-El historial Git incremental, el video de hasta cinco minutos y la defensa oral requieren el trabajo real del estudiante. No se fabrica historial retrospectivo.
-
-## Capturas
-
-![Procedimientos](docs/capturas/procedimientos.png)
-![Propietarios](docs/capturas/propietarios.png)
-![Atenciones](docs/capturas/atenciones.png)
-![Reportes](docs/capturas/reportes.png)
-![Eventos](docs/capturas/eventos.png)
+**Cambio en la modalidad:** No se incorpora material para grabar video. El documento original todavía menciona video y defensa oral en F3; la sustitución por una exposición con PDF debe ser aceptada por el docente.

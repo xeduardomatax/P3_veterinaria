@@ -57,6 +57,15 @@ public abstract sealed class Procedimiento implements Facturable, Serializable
         setPrecioBase(precioBase);
     }
 
+    /** Verifica que la clave reconstruida corresponda al subtipo correspondiente. */
+    private static CodigoClinico verificarClave(CodigoClinico clave, String prefijo) {
+        Objects.requireNonNull(clave, "La clave es obligatoria");
+        if (!clave.prefijo().equals(prefijo)) {
+            throw new ReglaNegocioException("La clave " + clave + " no corresponde al tipo " + prefijo);
+        }
+        return clave;
+    }
+
     /** Devuelve el contador de construcciones de procedimientos. */
     public static int instanciasCreadas() {
         return INSTANCIAS_CREADAS.get();
@@ -159,7 +168,7 @@ public abstract sealed class Procedimiento implements Facturable, Serializable
 
         /** Construye una instancia con los datos recibidos y valida sus invariantes. */
         public Vacuna(CodigoClinico clave, String nombre, double precioBase, String biologico) {
-            super(clave, nombre, precioBase);
+            super(verificarClave(clave, PREFIJO), nombre, precioBase);
             this.biologico = validar(biologico);
         }
 
@@ -217,7 +226,7 @@ public abstract sealed class Procedimiento implements Facturable, Serializable
 
         /** Construye una instancia con los datos recibidos y valida sus invariantes. */
         public Consulta(CodigoClinico clave, String nombre, double precioBase, int prioridad) {
-            super(clave, nombre, precioBase);
+            super(verificarClave(clave, PREFIJO), nombre, precioBase);
             this.prioridad = validar(prioridad);
         }
 
@@ -275,7 +284,7 @@ public abstract sealed class Procedimiento implements Facturable, Serializable
 
         /** Construye una instancia con los datos recibidos y valida sus invariantes. */
         public Cirugia(CodigoClinico clave, String nombre, double precioBase, int horasQuirofano) {
-            super(clave, nombre, precioBase);
+            super(verificarClave(clave, PREFIJO), nombre, precioBase);
             this.horasQuirofano = validar(horasQuirofano);
         }
 

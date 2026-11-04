@@ -6,7 +6,7 @@ package app {
   [DemoModelo / pruebas / DatosEjemplo] as Auxiliares
 }
 package ui {
-  [VentanaClinica\nSwing + FlatLaf\nSwingWorker / EDT] as UI
+  [InicioEscritorio / VentanaClinica\nSwing + FlatLaf\nSwingWorker / EDT] as UI
 }
 package servicio {
   [Clinica\nCRUD / reportes / respaldo] as Servicio

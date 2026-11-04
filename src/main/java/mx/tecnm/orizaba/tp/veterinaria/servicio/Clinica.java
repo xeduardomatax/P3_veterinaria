@@ -70,15 +70,26 @@ public class Clinica implements AutoCloseable {
             case Procedimiento.Consulta c -> new Procedimiento.Consulta(c.clave(),nombre,precio,Integer.parseInt(atributo));
             case Procedimiento.Cirugia c -> new Procedimiento.Cirugia(c.clave(),nombre,precio,Integer.parseInt(atributo));
         };
+        Map<Integer, Atencion> copias = reenlazar(List.of(nuevo));
         repoElementos.guardar(nuevo);
-        catalogo.retirar(anterior.clave()); catalogo.agregar(nuevo);
-        // Reenlaza las referencias de las atenciones con el catálogo vigente.
-        List<Atencion> anteriores = registros();
-        anteriores.forEach(t -> {
+        aplicarCatalogo(List.of(nuevo), copias);
+    }
+
+    private Map<Integer, Atencion> reenlazar(List<Procedimiento> nuevos) {
+        Map<CodigoClinico, Procedimiento> reemplazos = nuevos.stream()
+                .collect(Collectors.toMap(Procedimiento::clave, Function.identity()));
+        Map<Integer, Atencion> copias = new TreeMap<>();
+        registros().forEach(t -> {
             Atencion copia = new Atencion(t.id(),t.propietario(),t.fecha());
-            t.forEach(l -> copia.agregar(l.elemento().equals(anterior) ? nuevo : l.elemento(),l.unidades()));
-            copia.restaurarEstado(t.estado()); registros.put(copia.id(),copia);
+            t.forEach(l -> copia.agregar(reemplazos.getOrDefault(l.elemento().clave(), l.elemento()),l.unidades()));
+            copia.restaurarEstado(t.estado()); copias.put(copia.id(),copia);
         });
+        return copias;
+    }
+
+    private void aplicarCatalogo(List<Procedimiento> nuevos, Map<Integer, Atencion> copias) {
+        nuevos.forEach(p -> { catalogo.retirar(p.clave()); catalogo.agregar(p); });
+        registros.putAll(copias);
     }
 
     /** Modifica un propietario después de validar el conjunto completo de datos. */
@@ -137,16 +148,9 @@ public class Clinica implements AutoCloseable {
                 if (!anterior.tipo().equals(p.tipo())) throw new ReglaNegocioException("El respaldo cambia el tipo de " + p.clave());
             }
         }
-        for (Procedimiento p : nuevos) {
-            if (catalogo.buscar(p.clave()).isPresent()) {
-                String atributo = switch (p) {
-                    case Procedimiento.Vacuna v -> v.biologico();
-                    case Procedimiento.Consulta c -> Integer.toString(c.prioridad());
-                    case Procedimiento.Cirugia c -> Integer.toString(c.horasQuirofano());
-                };
-                editarProcedimiento(p.clave().toString(),p.nombre(),p.precioBase(),atributo);
-            } else { repoElementos.guardar(p); catalogo.agregar(p); }
-        }
+        Map<Integer, Atencion> copias = reenlazar(nuevos);
+        repoElementos.guardarTodos(nuevos);
+        aplicarCatalogo(nuevos, copias);
         publicar(TipoEvento.ALTA,"Catálogo restaurado desde respaldo");
     }
 
@@ -159,7 +163,7 @@ public class Clinica implements AutoCloseable {
     private final Set<Integer> alertados = ConcurrentHashMap.newKeySet();
     private final List<OyenteEvento> oyentes = new CopyOnWriteArrayList<>();
 
-    private final Repositorio<Procedimiento, CodigoClinico> repoElementos;
+    private final RepositorioProcedimientoSQLite repoElementos;
     private final Repositorio<Propietario, Integer> repoPropietarios;
     private final Repositorio<Atencion, Integer> repoRegistros;
     private final Supplier<LocalDate> reloj;
@@ -213,7 +217,7 @@ public class Clinica implements AutoCloseable {
      * Alta genérica de cualquier subtipo mediante una fábrica (función de orden superior).
      * Ejemplo: {@code registrar(Procedimiento.Vacuna::new, "...", 100.0, "Rabia")}.
      */
-    public <E extends Procedimiento, A> E registrar(FabricaElemento<E, A> fabrica, String nombre, double precio, A atributo) {
+    public synchronized <E extends Procedimiento, A> E registrar(FabricaElemento<E, A> fabrica, String nombre, double precio, A atributo) {
         E e = fabrica.crear(nombre,precio,atributo);
         repoElementos.guardar(e); catalogo.agregar(e);
         publicar(TipoEvento.ALTA,"Procedimiento registrado: " + e.nombre());
@@ -221,7 +225,7 @@ public class Clinica implements AutoCloseable {
     }
 
     /** Valida y persiste el nombre y precio de un procedimiento. */
-    public void actualizar(Procedimiento elemento, String nombre, double precio) {
+    public synchronized void actualizar(Procedimiento elemento, String nombre, double precio) {
         // Valida ambos valores antes de modificar el objeto compartido.
         if (nombre == null || nombre.isBlank()) throw new ReglaNegocioException("El nombre es obligatorio");
         if (!Double.isFinite(precio) || precio < 0) throw new ReglaNegocioException("Precio inválido");
@@ -233,7 +237,7 @@ public class Clinica implements AutoCloseable {
     }
 
     /** Retira un procedimiento; en la fachada impide retirar los utilizados. */
-    public boolean retirar(CodigoClinico clave) {
+    public synchronized boolean retirar(CodigoClinico clave) {
         if (registros.values().stream().flatMap(t -> t.lineas().stream()).anyMatch(l -> l.elemento().clave().equals(clave))) throw new ReglaNegocioException("El procedimiento está utilizado en una atención");
         boolean eliminado = repoElementos.eliminar(clave);
         if (eliminado) catalogo.retirar(clave);
@@ -254,7 +258,7 @@ public class Clinica implements AutoCloseable {
     // ------------------------------------------------------------------ propietarios
 
     /** Valida el correo único, asigna identidad y persiste un propietario. */
-    public Propietario registrarPropietario(String nombre, String correo, Nivel nivel) {
+    public synchronized Propietario registrarPropietario(String nombre, String correo, Nivel nivel) {
         Propietario p = new Propietario(propietarios.keySet().stream().mapToInt(Integer::intValue).max().orElse(0) + 1,nombre,correo,nivel);
         if (propietarios.values().stream().anyMatch(a -> a.correo().equals(p.correo()))) throw new ReglaNegocioException("El correo ya está registrado");
         repoPropietarios.guardar(p); propietarios.put(p.id(),p);
@@ -263,7 +267,7 @@ public class Clinica implements AutoCloseable {
     }
 
     /** Cambia y persiste el nivel del propietario. */
-    public void cambiarNivel(int idPropietario, Nivel nivel) {
+    public synchronized void cambiarNivel(int idPropietario, Nivel nivel) {
         Propietario a = propietario(idPropietario);
         actualizarPropietario(idPropietario, a.nombre(), a.correo(), nivel);
     }
@@ -282,7 +286,7 @@ public class Clinica implements AutoCloseable {
     // ------------------------------------------------------------------ atenciones
 
     /** Abre y persiste una atención con la fecha del reloj inyectado. */
-    public Atencion abrir(int idPropietario) {
+    public synchronized Atencion abrir(int idPropietario) {
         Atencion t = new Atencion(registros.keySet().stream().mapToInt(Integer::intValue).max().orElse(0) + 1,propietario(idPropietario),reloj.get());
         repoRegistros.guardar(t); registros.put(t.id(),t);
         publicar(TipoEvento.CAMBIO_ESTADO,"Atención #" + t.id() + ": " + t.estado());
@@ -290,7 +294,7 @@ public class Clinica implements AutoCloseable {
     }
 
     /** Agrega y persiste un procedimiento con su cantidad de sesiones. */
-    public Atencion.Linea agregarLinea(int idAtencion, String clave, int unidades) {
+    public synchronized Atencion.Linea agregarLinea(int idAtencion, String clave, int unidades) {
         Atencion t = registro(idAtencion);
         Atencion.Linea l = t.agregar(elemento(clave),unidades);
         try { repoRegistros.guardar(t); } catch (RuntimeException e) { t.quitar(l.elemento().clave()); throw e; }
@@ -298,7 +302,7 @@ public class Clinica implements AutoCloseable {
     }
 
     /** Quita y persiste una línea de una atención registrada. */
-    public boolean quitarLinea(int idAtencion, String clave) {
+    public synchronized boolean quitarLinea(int idAtencion, String clave) {
         Atencion t = registro(idAtencion);
         CodigoClinico codigo = CodigoClinico.parse(clave);
         List<Atencion.Linea> anteriores = t.lineas();
@@ -314,17 +318,17 @@ public class Clinica implements AutoCloseable {
     }
 
     /** Inicia la atención; exige al menos una línea y estado registrado. */
-    public void iniciar(int idAtencion) {
+    public synchronized void iniciar(int idAtencion) {
         transitar(idAtencion, Atencion::iniciar);
     }
 
     /** Concluye la atención en curso. */
-    public void cerrar(int idAtencion) {
+    public synchronized void cerrar(int idAtencion) {
         transitar(idAtencion, Atencion::cerrar);
     }
 
     /** Cancela una atención que no sea terminal. */
-    public void cancelar(int idAtencion) {
+    public synchronized void cancelar(int idAtencion) {
         transitar(idAtencion, Atencion::cancelar);
     }
 
@@ -481,7 +485,7 @@ public class Clinica implements AutoCloseable {
     // ------------------------------------------------------------------ respaldo
 
     /** Escribe un respaldo binario del catálogo, propietarios y atenciones. */
-    public void exportarRespaldo(Path archivo) throws IOException {
+    public synchronized void exportarRespaldo(Path archivo) throws IOException {
         Respaldo.exportar(archivo, catalogo, propietarios(), registros());
     }
 

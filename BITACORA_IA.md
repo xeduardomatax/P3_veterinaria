@@ -1,32 +1,87 @@
-# Bitácora de uso de IA
+# BITÁCORA DE USO DE HERRAMIENTAS DE INTELIGENCIA ARTIFICIAL
 
-## Registro Git del 27/10/2026
+**Proyecto:** Control de Atenciones de una Clínica Veterinaria  
+**Materia:** Tecnologías de Programación — Miniproyecto Java 3  
+**Periodo documentado:** del 7 de octubre al 3 de noviembre de 2026  
+**Herramientas registradas:** ChatGPT y OpenAI Codex  
 
-Herramienta: OpenAI Codex. Solicitud: organizar un commit significativo por grupo E02–E16. El usuario proporcionó su identidad de autor y autorizó configurar el repositorio local. Se organiza la incorporación del código existente por grupos según docs/PLAN_COMMITS.md, con fechas actuales y sin modificar las pruebas ni simular etapas de desarrollo anteriores. Esta incorporación temática no acredita el historial incremental previo solicitado por el docente. La validación final se realiza con Maven sobre el conjunto completo; no se afirma que las incorporaciones intermedias compilen por separado.
+Esta bitácora es una reconstrucción retrospectiva de las consultas y revisiones que quedaron documentadas durante el desarrollo. Los textos de las solicitudes son resúmenes, no transcripciones literales. Se registra tanto la orientación recibida como la ayuda utilizada para revisar o generar fragmentos de código. El objetivo es dejar claro para qué se utilizaron las herramientas y cuáles decisiones se conservaron en el proyecto.
 
-| Fecha | Herramienta | Propósito y prompt resumido | Incorporación y motivo | Límites |
-|---|---|---|---|---|
-| 16/10/2026 | OpenAI Codex | Realizar proyecto y documento, escritorio, conforme al PDF, sin extras. | Se leyeron las 11 páginas y se delimitó Java 21, SQLite 3.46.1.3, Swing/FlatLaf y cinco pantallas. | No se añadieron módulos de mascotas, inventario, agenda o autenticación. |
-| 16/10/2026 | OpenAI Codex | Completar los 90 TODO conservando firmas y pruebas. | Implementación asistida de validaciones, tarifas, claves, estados, tipos internos, reglas, monitor, JDBC, serialización, fachada y reportes. Se incorpora por corresponder al PDF y superar las pruebas ejecutadas. | No se modificó PruebasModelo.java. La comprensión debe ser verificada por el estudiante. |
-| 16/10/2026 | OpenAI Codex | UI de escritorio, RF06/RF07 y CRUD de E1. | SwingWorker, eventos en EDT, CRUD, respaldo/restauración del catálogo y reportes requeridos. | La restauración fusiona catálogo; no reemplaza la base. No se inventó historial Git. |
-| 16/10/2026 | OpenAI Codex | Verificar y documentar. | Pruebas originales y adicionales, revisión de pantallas, datos de ejemplo, Javadoc, diagrama y documentación. | Video y defensa requieren participación del estudiante. No se contó con base_proyectos.zip. |
-| 17/10/2026 | OpenAI Codex | Entregar los diagramas actualizados. | Revisión del código, actualización del modelo y arquitectura en DOT/PlantUML y generación de SVG/PNG. Se incorpora para reflejar la UI Swing y la implementación existente. | Los diagramas describen el código; no se modifica su arquitectura. Se señala el acoplamiento modelo/funcional que ya contiene el esqueleto. |
+## Semana 1 · Del 7 al 13 de octubre
 
-Se declara asistencia sustancial, incluida generación del modelo. La sección 11 del PDF exige comprender y poder reproducir o modificar los métodos en la defensa. Las pruebas aprobadas no acreditan por sí solas el dominio conceptual del estudiante.
+### 7 de octubre — Preparación del entorno y organización inicial
 
+- **Herramienta:** ChatGPT.
+- **Propósito:** Aclarar cómo empezar el miniproyecto en Visual Studio Code y cómo organizar el trabajo con Java, Maven y GitHub.
+- **Solicitud resumida:** «Quiero desarrollar el proyecto de manera sencilla, en Java y desde Visual Studio Code. ¿Cómo compruebo las herramientas y cómo puedo apoyarme en Codex sin perder el control del código?»
+- **Orientación recibida:** Diferencias entre JDK y Maven; comprobación del entorno; organización del proyecto por paquetes; relación entre editor, repositorio Git y asistente de programación.
+- **Qué se aceptó y por qué:** Se tomó como base un proyecto Maven y una aplicación de escritorio, porque permiten centrarse en los requisitos del modelo sin desplegar un servidor web.
+- **Qué se descartó y por qué:** No se plantearon módulos de inventario, agendas o autenticación: no forman parte del problema especificado.
 
-## Revisión del 21/10/2026
+## Semana 2 · Del 14 al 20 de octubre
 
-Herramienta: OpenAI Codex. Solicitud: analizar PDF y seis comprimidos y adaptar el apartado 3. Se revisaron 105 archivos Java; se incorporaron captura efectivamente final en Acumulador, protección de reinicio durante detención de TareaPeriodica, Javadoc de FabricaElemento y prueba de regresión Maven. Se documenta la relación con cada fila de Booch. Se conserva por elección expresa del usuario la firma filtrar(Regla) y el ciclo modelo/funcional pendiente; no se presenta A16 como completo. No se añadieron reflexión ni metaprogramación, porque la tabla no las requiere. No se alteraron PruebasModelo ni datos.db.
+### 15–16 de octubre — Modelo de objetos y reglas de negocio
 
+- **Herramientas:** ChatGPT y OpenAI Codex.
+- **Propósito:** Entender el enunciado, distribuir las responsabilidades de las clases y resolver las partes más complejas del modelo.
+- **Solicitud resumida:** «Analiza el PDF y ayúdame a completar las clases sin cambiar sus firmas: procedimientos, propietarios, atenciones, claves y validaciones».
+- **Orientación y asistencia:** Uso de `Procedimiento` como clase abstracta sellada, subtipos `Vacuna`, `Consulta` y `Cirugia`, tarifas polimórficas, identificadores `CodigoClinico`, descuentos por nivel y transiciones válidas de `Atencion`. Se utilizó asistencia para explicar, revisar e implementar métodos de los grupos E02–E08.
+- **Qué se aceptó y por qué:** Se mantuvieron las fórmulas de tarifas, la máquina de estados y las validaciones indicadas por el docente, ya que son parte de las pruebas de aceptación.
+- **Qué se descartó y por qué:** No se modificaron las firmas públicas ni `PruebasModelo.java`, para conservar el contrato original del ejercicio.
 
-## Memoria de evolución del 21/10/2026
+### 16–17 de octubre — Componentes avanzados y diagramas
 
-Herramienta: OpenAI Codex. Solicitud: comparar el ZIP inicial y preparar un PDF sobre cambios y aprendizajes. Se compararon 29 fuentes iniciales con 35 actuales: 90 bloques completados, 27 archivos con cambios, dos sin cambios de contenido y seis añadidos. Se generó una memoria de 11 páginas y fuente editable. El orden por etapas se presenta como reconstrucción didáctica; los textos personales son propuestas para adaptar. Se conserva el pendiente de modularidad. No se modificó código Java ni datos.db. Se cita la verificación anterior de la sesión; no se declara una nueva ejecución de Maven durante esta elaboración.
+- **Herramienta:** OpenAI Codex.
+- **Propósito:** Revisar conceptos de Java que no eran evidentes al leer únicamente las pantallas y documentar sus relaciones.
+- **Solicitud resumida:** «Explícame y revisa los tipos internos, lambdas, hilos, repositorios y diagramas de clases de lo que realmente está implementado».
+- **Orientación y asistencia:** Clases internas, interfaces funcionales, referencias a métodos, `streams`, monitor periódico, JDBC, serialización y relaciones entre paquetes. Se prepararon diagramas editables acordes con el proyecto.
+- **Qué se aceptó y por qué:** Mantener separados los paquetes del modelo, servicio, persistencia e interfaz ayuda a identificar qué clase cambiar ante una nueva regla.
+- **Límite reconocido:** Los diagramas sirven para describir el código; por sí solos no comprueban que toda dependencia de paquetes sea correcta.
 
+## Semana 3 · Del 21 al 27 de octubre
 
-## Depuración conforme al PDF — 27/10/2026
+### 21 de octubre — Revisión de concurrencia y programación funcional
 
-Herramienta: OpenAI Codex. Solicitud: analizar el PDF, eliminar lo innecesario y ajustar a sus requisitos. Se extrajeron sus 11 páginas. Se retiraron informes complementarios, sus generadores y el ejemplo comentado de JavaFX; los reportes de UI se limitaron a RF07. Se conservaron las firmas y pruebas originales, la base de ejemplo, los tipos exigidos, los diagramas y la bitácora. Se corrigió la recuperación en memoria ante fallo al quitar líneas y la actualización del nivel ante fallo de persistencia. Se mantiene explícita la limitación A16 para no presentar cumplimiento total sin cambiar las firmas originales.
+- **Herramienta:** OpenAI Codex.
+- **Propósito:** Revisar errores y decisiones de diseño en funciones de mayor dificultad.
+- **Solicitud resumida:** «Comprueba que las reglas funcionales, los tipos internos y el hilo de seguimiento estén bien utilizados y que se puedan explicar en la evaluación».
+- **Orientación y asistencia:** Revisión de `Regla<T>`, clase local `Acumulador`, captura de variables efectivamente finales y detención cooperativa de `TareaPeriodica`.
+- **Qué se aceptó y por qué:** Se incorporaron ajustes de seguridad del hilo y documentación de métodos para reducir comportamientos inesperados y facilitar la explicación.
+- **Qué quedó pendiente:** Se identificó una limitación de dependencia entre `modelo` y `funcional` respecto al criterio A16; no se presenta como resuelta.
 
-La verificación detectó cero atenciones en datos.db; se agregaron cuatro con estados distintos, conservando los seis procedimientos y tres propietarios existentes. Se guardó una copia anterior en tmp/datos-antes-depuracion.db. Maven package aprobó 14/14 y las pruebas propias, incluidas regresiones de escrituras fallidas.
+### 27 de octubre — Interfaz, persistencia y pruebas
+
+- **Herramienta:** OpenAI Codex.
+- **Propósito:** Relacionar la interfaz Swing con la fachada `Clinica` y revisar persistencia, monitor y casos de demostración.
+- **Solicitud resumida:** «Verifica el flujo de atenciones desde la interfaz, los datos de ejemplo y los resultados de las pruebas sin alterar el modelo exigido».
+- **Orientación y asistencia:** Revisión del CRUD de procedimientos y propietarios, atenciones con líneas y estados, reportes, bitácora de eventos, respaldo binario y operaciones SQLite.
+- **Qué se aceptó y por qué:** Las acciones de la interfaz pasan por el servicio; los mensajes del monitor se muestran sin bloquear el hilo gráfico. Se conservaron datos de ejemplo y pruebas del docente.
+- **Verificación documentada en esa etapa:** En la revisión del 27 de octubre se registró la ejecución de 14/14 pruebas con Maven. Esa ejecución no sustituye repetirlas sobre la entrega definitiva.
+
+## Semana 4 · Del 28 de octubre al 3 de noviembre
+
+### 2 de noviembre — Depuración del proyecto conforme a la rúbrica
+
+- **Herramienta:** OpenAI Codex.
+- **Propósito:** Comparar el resultado con las 11 páginas del PDF y retirar elementos innecesarios.
+- **Solicitud resumida:** «Revisa lo que aún no corresponde a la rúbrica, conserva las pruebas originales y simplifica la entrega».
+- **Orientación y asistencia:** Revisión de transacciones SQLite y del monitor, ajuste de la base de ejemplo a cuatro estados distintos, documentación de ejecución desde PowerShell y limpieza de archivos auxiliares.
+- **Qué se aceptó y por qué:** Conservar la base SQLite, los diagramas, el código necesario y el historial auténtico de Git, sin inventar avances ni cambios anteriores.
+- **Qué no se declaró como resuelto:** El criterio A16 sigue documentado como limitación; no se cambió el contrato público para ocultarlo.
+- **Verificación documentada en esa etapa:** Se registró una compilación Maven y 14/14 pruebas aprobadas en el entorno donde se realizó esa revisión.
+
+### 3 de noviembre — Ajustes finales y preparación para exponer
+
+- **Herramienta:** ChatGPT.
+- **Propósito:** Dar una última revisión a la entrega y preparar material independiente de exposición, ya que no se realizará el video.
+- **Solicitud resumida:** «Analiza a detalle el ZIP y el PDF, elimina lo que no se necesita, conserva lo solicitado y dame un documento que pueda usar para explicar el proyecto».
+- **Orientación y asistencia:** Validación adicional del formato de `CodigoClinico`, revisión de las pruebas, depuración de archivos temporales y preparación del PDF de exposición.
+- **Qué se aceptó y por qué:** Se mantuvo la arquitectura y las funciones requeridas; se dio prioridad a cambios puntuales en lugar de añadir funciones ajenas a la rúbrica.
+- **Qué se descartó y por qué:** No se creó un video ni se simuló que ya se había realizado la defensa oral.
+- **Límite de la comprobación final:** Con JDK 21 se verificó la compilación y se ejecutaron T01–T10 más una prueba adicional. T11–T14 requieren repetir la ejecución con la dependencia SQLite JDBC disponible. Por ello, no se afirma que las 14 pruebas hayan sido ejecutadas nuevamente el 3 de noviembre.
+
+## Reflexión final
+
+Las herramientas de IA resultaron especialmente útiles al estudiar **polimorfismo y tarifas, transiciones de estado, concurrencia, JDBC, serialización y reportes con streams**. Además de la orientación conceptual, hubo asistencia para revisar y generar código, por lo que estos apartados requieren estudio y práctica antes de la defensa.
+
+La explicación del diseño, la comprensión de los métodos y la capacidad de modificar el programa durante la evaluación corresponden al estudiante. Este documento declara el apoyo utilizado y las limitaciones que se conocen, sin atribuir trabajo a herramientas no verificadas.

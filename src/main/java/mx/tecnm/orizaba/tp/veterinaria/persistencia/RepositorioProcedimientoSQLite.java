@@ -59,9 +59,18 @@ public class RepositorioProcedimientoSQLite implements Repositorio<Procedimiento
     /** Inserta o actualiza la entidad mediante sentencia parametrizada. */
     @Override
     public void guardar(Procedimiento e) {
+        guardarTodos(List.of(e));
+    }
+
+    /** Guarda el catálogo recibido en una sola transacción; un fallo revierte todas las filas. */
+    public void guardarTodos(List<Procedimiento> elementos) {
         bd.enTransaccion(c -> {
             try (PreparedStatement s = c.prepareStatement("INSERT INTO procedimiento VALUES(?,?,?,?,?) ON CONFLICT(clave) DO UPDATE SET tipo=excluded.tipo,nombre=excluded.nombre,precio_base=excluded.precio_base,atributo=excluded.atributo")) {
-                s.setString(1,e.clave().toString()); s.setString(2,e.tipo()); s.setString(3,e.nombre()); s.setDouble(4,e.precioBase()); s.setString(5,atributoDe(e)); s.executeUpdate();
+                for (Procedimiento e : elementos) {
+                    s.setString(1,e.clave().toString()); s.setString(2,e.tipo()); s.setString(3,e.nombre()); s.setDouble(4,e.precioBase()); s.setString(5,atributoDe(e));
+                    s.addBatch();
+                }
+                s.executeBatch();
             }
             return null;
         });

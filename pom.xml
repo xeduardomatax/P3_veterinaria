@@ -30,7 +30,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
-        <configuration><compilerArgs><arg>-Xlint:all</arg></compilerArgs></configuration>
+        <configuration><compilerArgs><arg>-Xlint:all</arg><arg>-Werror</arg></compilerArgs></configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -39,12 +39,26 @@
         <configuration><mainClass>${exec.mainClass}</mainClass></configuration>
         <executions>
           <execution>
+            <id>restauracion-atomica</id><phase>test</phase><goals><goal>java</goal></goals>
+            <configuration>
+              <mainClass>mx.tecnm.orizaba.tp.veterinaria.app.PruebaRestauracionAtomica</mainClass>
+              <classpathScope>test</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
             <id>aceptacion-modelo</id><phase>test</phase><goals><goal>java</goal></goals>
             <configuration><mainClass>mx.tecnm.orizaba.tp.veterinaria.app.PruebasModelo</mainClass></configuration>
           </execution>
           <execution>
             <id>integracion</id><phase>test</phase><goals><goal>java</goal></goals>
             <configuration><mainClass>mx.tecnm.orizaba.tp.veterinaria.app.PruebasIntegracion</mainClass></configuration>
+          </execution>
+          <execution>
+            <id>validaciones-clave</id><phase>test</phase><goals><goal>java</goal></goals>
+            <configuration>
+              <mainClass>mx.tecnm.orizaba.tp.veterinaria.app.PruebaValidaciones</mainClass>
+              <classpathScope>test</classpathScope>
+            </configuration>
           </execution>
           <execution>
             <id>reinicio-tarea</id><phase>test</phase><goals><goal>java</goal></goals>
