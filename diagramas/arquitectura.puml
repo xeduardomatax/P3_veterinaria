@@ -1,61 +1,69 @@
 @startuml
-title Arquitectura de escritorio - dependencias del código actual
+title Arquitectura del proyecto Java — dependencias reales (05/11/2026)
+left to right direction
 skinparam componentStyle rectangle
+skinparam shadowing false
 package app {
-  [Aplicacion] as Inicio
-  [DemoModelo / pruebas / DatosEjemplo] as Auxiliares
+  [Aplicacion] as App
+  [DatosEjemplo / DemoModelo / PruebasModelo / PruebasIntegracion] as Tests
 }
 package ui {
-  [InicioEscritorio / VentanaClinica\nSwing + FlatLaf\nSwingWorker / EDT] as UI
+  [InicioEscritorio] as Inicio
+  [VentanaClinica
+Swing + FlatLaf] as UI
 }
 package servicio {
-  [Clinica\nCRUD / reportes / respaldo] as Servicio
+  [Clinica
+fachada única] as Clinica
   [Clinica.MonitorSeguimiento] as Monitor
 }
-package persistencia {
-  [Repositorios SQLite\nConexionSQLite] as JDBC
-  [Respaldo] as Respaldo
+package modelo {
+  [Procedimiento / Atencion / Propietario / Catálogo] as Modelo
+}
+package funcional {
+  [Regla / Reglas / FabricaElemento] as Func
+}
+package eventos {
+  [Evento / OyenteEvento / TipoEvento] as Eventos
 }
 package concurrencia {
   [TareaPeriodica] as Tarea
 }
-package eventos {
-  [Evento / TipoEvento / OyenteEvento] as Eventos
-}
-package funcional {
-  [Regla / Reglas / FabricaElemento] as Funcional
-}
-package modelo {
-  [Tipos del dominio / CatalogoProcedimientos] as Modelo
+package persistencia {
+  [Repositorios / ConexionSQLite] as SQL
+  [Respaldo] as Backup
 }
 database "datos.db" as DB
-file "respaldo.bin" as BIN
-Inicio --> UI
-Inicio --> Servicio
-Auxiliares --> Servicio
-Auxiliares --> JDBC
-UI --> Servicio
-UI --> Modelo
-Servicio --> JDBC
-Servicio --> Respaldo
-Servicio --> Modelo
-Servicio --> Funcional
-Servicio --> Eventos
-Servicio +-- Monitor
+file "respaldo binario" as Bin
+App --> Inicio
+Inicio --> Clinica : abrirArchivo
+Inicio --> UI : construye
+UI --> Clinica : casos de uso
+UI --> Modelo : lectura de tipos
+Tests --> Clinica
+Tests --> SQL
+Clinica --> Modelo
+Clinica --> Func
+Clinica --> Eventos
+Clinica --> SQL
+Clinica --> Backup
+Clinica +-- Monitor
 Monitor --|> Tarea
-JDBC --> Modelo
-Respaldo --> Modelo
-Funcional --> Modelo
-Modelo --> Funcional : Catálogo usa Regla<T>
-JDBC ..> DB
-Respaldo ..> BIN
+SQL --> Modelo
+SQL ..> DB
+Backup --> Modelo
+Backup ..> Bin
+Func --> Modelo
+Modelo --> Func : catálogo usa Regla
 note bottom of UI
-  Los eventos vuelven al EDT mediante invokeLater.
-  Las operaciones largas se ejecutan en segundo plano.
-  No hay SQL ni acceso JDBC en la UI.
+  VentanaClinica muestra eventos con invokeLater
+
+  y usa ExecutorService para tareas de fondo.
+  No ejecuta SQL ni usa JDBC.
 end note
-note bottom of Funcional
-  modelo <-> funcional refleja el acoplamiento
-  presente en el esqueleto proporcionado.
+note bottom of Modelo
+  Dependencia modelo → funcional encontrada en
+  CatalogoProcedimientos.java. Es una excepción
+  frente a la dirección ideal de la rúbrica A16.
 end note
 @enduml

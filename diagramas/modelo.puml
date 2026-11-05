@@ -1,249 +1,184 @@
 @startuml
-title P3 - Control de Atenciones de una Clínica Veterinaria\nClases y relaciones actuales - 17/10/2026
+title Modelo de objetos: clases y relaciones actuales (05/11/2026)
 skinparam classAttributeIconSize 0
+skinparam shadowing false
 skinparam linetype ortho
+hide empty members
+left to right direction
 
 package modelo {
-  interface Facturable {
-    {static} +TASA_IMPUESTO : double
+  interface "Facturable" as Facturable <<interface>> {
+    +TASA_IMPUESTO : double = 0.16
+    --
     +clave() : CodigoClinico
     +nombre() : String
     +precioBase() : double
-    +tarifa(u : int) : double
-    +tarifaConImpuesto(u : int) : double
+    +tarifa(u:int) : double
+    +tarifaConImpuesto(u:int) : double
     {static} +porNombre() : Comparator
   }
-  interface Programable {
+  interface "Programable" as Programable <<interface>> {
     +intervaloDias() : int
     +descripcionCorta() : String
   }
-  interface Supervisado {
+  interface "Supervisado" as Supervisado <<interface>> {
     +responsable() : String
     +descripcionCorta() : String
   }
-  abstract class Procedimiento <<sealed>> {
+  abstract class "Procedimiento" as Procedimiento <<abstract sealed>> {
     -clave : CodigoClinico
     -nombre : String
     -precioBase : double
     -creadoEn : LocalDateTime
-    -cotizaciones : int <<transient>>
-    +tarifa(u : int) : double <<final>>
-    {abstract} #calcularTarifa(u : int) : double
-    {abstract} +copiar() : Procedimiento
+    -cotizaciones : int {transient}
+    --
+    +tarifa(unidades:int) : double {final}
+    #calcularTarifa(unidades:int) : double {abstract}
+    +copiar() : Procedimiento {abstract}
+    +setNombre(nombre:String)
+    +setPrecioBase(precio:double)
+    +tipo() : String
   }
-  class "Procedimiento.Vacuna" as Vacuna <<static final>> {
-    {static} +PREFIJO : String = "VAC"
+  class "Procedimiento.Vacuna" as Vacuna <<final static>> {
+    +PREFIJO : String = VAC
     -biologico : String
-    #calcularTarifa(u : int) : double
+    --
+    #calcularTarifa(u:int) : double
     +copiar() : Vacuna
+    +intervaloDias() : int
   }
-  class "Procedimiento.Consulta" as Consulta <<static final>> {
-    {static} +PREFIJO : String = "CON"
+  class "Procedimiento.Consulta" as Consulta <<final static>> {
+    +PREFIJO : String = CON
     -prioridad : int
-    #calcularTarifa(u : int) : double
+    --
+    #calcularTarifa(u:int) : double
     +copiar() : Consulta
+    +responsable() : String
   }
-  class "Procedimiento.Cirugia" as Cirugia <<static final>> {
-    {static} +PREFIJO : String = "CIR"
+  class "Procedimiento.Cirugia" as Cirugia <<final static>> {
+    +PREFIJO : String = CIR
     -horasQuirofano : int
-    #calcularTarifa(u : int) : double
+    --
+    #calcularTarifa(u:int) : double
     +copiar() : Cirugia
+    +descripcionCorta() : String
   }
-  class CodigoClinico <<record>> {
+  class "CodigoClinico" as CodigoClinico <<record>> {
     prefijo : String
     numero : int
-    {static} +siguiente(prefijo : String) : CodigoClinico
-    {static} +parse(texto : String) : CodigoClinico
+    --
+    {static} +siguiente(prefijo:String) : CodigoClinico
+    {static} +registrar(clave:CodigoClinico)
+    {static} +parse(texto:String) : CodigoClinico
   }
-  enum Nivel {
-    GENERAL
-    PLAN_SALUD
-    RESCATISTA
-    +aplicar(monto : double) : double
+  enum "Nivel" as Nivel <<enum>> {
+    GENERAL (0%)
+    PLAN_SALUD (12%)
+    RESCATISTA (30%)
+    --
+    +descuento() : double
+    +aplicar(monto:double) : double
   }
-  enum Estado {
+  enum "Estado" as Estado <<enum>> {
     ABIERTA
     EN_CURSO
     CERRADA
     CANCELADA
-    +permiteTransicionA(d : Estado) : boolean
+    --
+    +permiteTransicionA(destino:Estado) : boolean
+    +esTerminal() : boolean
   }
-  class Propietario <<Externalizable>> {
+  class "Propietario" as Propietario <<Externalizable>> {
     -id : int
     -nombre : String
     -correo : String
     -nivel : Nivel
-    +setNombre(nombre : String)
-    +setCorreo(correo : String)
-    +setNivel(nivel : Nivel)
-    +writeExternal(salida : ObjectOutput)
-    +readExternal(entrada : ObjectInput)
+    --
+    +setNombre(nombre:String)
+    +setCorreo(correo:String)
+    +setNivel(nivel:Nivel)
+    +writeExternal(out:ObjectOutput)
+    +readExternal(in:ObjectInput)
   }
-  class Atencion {
+  class "Atencion" as Atencion <<Serializable / Iterable>> {
     -id : int
+    -propietario : Propietario
     -fecha : LocalDate
     -estado : Estado
-    +agregar(e : Procedimiento, u : int) : Linea
-    +quitar(clave : CodigoClinico) : boolean
-    +cambiarEstado(d : Estado)
+    -lineas : ArrayList<Linea>
+    --
+    +agregar(elemento:Procedimiento,u:int) : Linea
+    +quitar(clave:CodigoClinico) : boolean
+    +cambiarEstado(destino:Estado)
+    +lineas() : List<Linea>
     +subtotal() : double
     +total() : double
+    +diasDesde(hoy:LocalDate) : long
   }
-  class "Atencion.Linea" as Linea <<inner>> {
-    -unidades : int
+  class "Atencion.Linea" as Linea <<inner final>> {
     -elemento : Procedimiento
+    -unidades : int
+    --
     +subtotal() : double
     +importe() : double
     +contenedor() : Atencion
   }
-  class CatalogoProcedimientos {
-    +agregar(e : Procedimiento...)
-    +filtrar(r : Regla) : List
-    +deTipo(tipo : Class) : List
-    +ordenados(criterio : Comparator) : List
-    {static} +porTarifa(u : int) : Comparator
+  class "CatalogoProcedimientos" as Catalogo <<Iterable>> {
+    -elementos : LinkedHashMap
+    --
+    +agregar(e:Procedimiento...)
+    +buscar(clave:CodigoClinico) : Optional
+    +filtrar(regla:Regla) : List
+    +deTipo(tipo:Class) : List
+    {static} +porTarifa(u:int) : Comparator
     +resumen() : String
   }
-  class "CatalogoProcedimientos.Iterador" as Iterador <<private inner>>
+  class "CatalogoProcedimientos.Iterador" as Iterador <<private inner>> {
+    +hasNext() : boolean
+    +next() : Procedimiento
+  }
+  class "ReglaNegocioException" as ReglaEx <<RuntimeException>> {
+  }
 }
 
 package funcional {
-  interface "Regla<T>" as Regla <<functional>> {
-    +evaluar(t : T) : boolean
-    +y(o) : Regla
-    +o(o) : Regla
+  interface "Regla<T>" as Regla <<functional interface>> {
+    +evaluar(t:T) : boolean
+    +y(otra:Regla) : Regla
+    +o(otra:Regla) : Regla
     +negar() : Regla
+    +comoPredicado() : Predicate
   }
-  interface "FabricaElemento<E extends Procedimiento, A>" as Fabrica <<functional>> {
-    +crear(nombre, precio, atributo : A) : E
+  class "Reglas" as Reglas <<utility>> {
+    {static} +precioHasta(max:double) : Regla
+    {static} +nombreContiene(texto:String) : Regla
+    {static} +conCapacidad(tipo:Class) : Regla
   }
-  class Reglas <<utility>> {
-    {static} +precioHasta(maximo : double) : Regla
-    {static} +nombreContiene(texto : String) : Regla
-    {static} +conCapacidad(tipo : Class) : Regla
+  interface "FabricaElemento<E, A>" as Fabrica <<functional interface>> {
+    +crear(nombre:String, precio:double, atributo:A) : E
   }
-}
-
-package concurrencia {
-  abstract class TareaPeriodica implements Runnable {
-    -activa : boolean <<volatile>>
-    +iniciar(nombre : String)
-    +detener()
-    {abstract} #ejecutarCiclo()
-  }
-}
-
-package eventos {
-  interface OyenteEvento <<functional>> {
-    +notificar(evento : Evento)
-    +luego(siguiente : OyenteEvento) : OyenteEvento
-  }
-  class Evento <<record>>
-  enum TipoEvento {
-    ALTA
-    CAMBIO_ESTADO
-    ALERTA
-    CANCELACION_AUTOMATICA
-  }
-}
-
-package persistencia {
-  interface "Repositorio<T,K>" as Repositorio {
-    +guardar(entidad : T)
-    +buscar(clave : K) : Optional
-    +todos() : List
-    +eliminar(clave : K) : boolean
-  }
-  interface "Repositorio.MapeadorFila<R>" as Mapeador <<member interface>>
-  class RepositorioProcedimientoSQLite
-  class RepositorioPropietarioSQLite
-  class RepositorioAtencionSQLite
-  class ConexionSQLite
-  class Respaldo
-}
-
-package servicio {
-  class Clinica {
-    {static} +abrirArchivo(archivo : Path) : Clinica
-    +registrar(f : FabricaElemento, ...) : E
-    +editarProcedimiento(clave, nombre, precio, atributo)
-    +actualizarPropietario(id, nombre, correo, nivel)
-    +eliminarPropietario(id) : boolean
-    +eliminarAtencion(id) : boolean
-    +registrarPropietario(nombre, correo, nivel) : Propietario
-    +abrir(id : int) : Atencion
-    +agregarLinea(id, clave, unidades) : Linea
-    +quitarLinea(id, clave) : boolean
-    +iniciar(id : int)
-    +cerrar(id : int)
-    +cancelar(id : int)
-    +exportarRespaldo(archivo : Path)
-    +restaurarCatalogo(archivo : Path)
-    +masRentables(n : int) : List
-    +particionarAtenciones() : Map
-    +estadisticasTarifas() : DoubleSummaryStatistics
-    +ingresosPorTipo() : Map
-    +mejores(n : int) : List
-    +revisar() : int
-    +iniciarMonitor(ms : long)
-    +detenerMonitor()
-    +close()
-  }
-  class "Clinica.MonitorSeguimiento" as Monitor <<inner>>
 }
 
 Procedimiento ..|> Facturable
-Procedimiento --> CodigoClinico
 Vacuna --|> Procedimiento
-Procedimiento +-- Vacuna
-Vacuna ..|> Programable
 Consulta --|> Procedimiento
-Procedimiento +-- Consulta
-Consulta ..|> Supervisado
 Cirugia --|> Procedimiento
-Procedimiento +-- Cirugia
+Vacuna ..|> Programable
+Consulta ..|> Supervisado
 Cirugia ..|> Programable
 Cirugia ..|> Supervisado
-Atencion *-- "0..*" Linea
-Atencion +-- Linea
-Linea --> "1" Procedimiento
-Atencion --> "1" Propietario
-Atencion --> Estado
-Propietario --> Nivel
-CatalogoProcedimientos o-- "0..*" Procedimiento
-CatalogoProcedimientos +-- Iterador
-CatalogoProcedimientos ..> Regla
-Reglas ..> Regla
-Reglas ..> Procedimiento
-Fabrica ..> Procedimiento
-Clinica +-- Monitor
-Monitor --|> TareaPeriodica
-Clinica o-- "0..*" OyenteEvento
-Clinica --> CatalogoProcedimientos
-Clinica --> Repositorio
-RepositorioProcedimientoSQLite ..|> Repositorio
-RepositorioPropietarioSQLite ..|> Repositorio
-RepositorioAtencionSQLite ..|> Repositorio
-RepositorioAtencionSQLite --> ConexionSQLite
-RepositorioProcedimientoSQLite --> ConexionSQLite
-RepositorioPropietarioSQLite --> ConexionSQLite
-Repositorio +-- Mapeador
-Clinica --> ConexionSQLite : administra si abrirArchivo
-Clinica ..> Respaldo
-OyenteEvento ..> Evento
-Evento --> TipoEvento
-package ui {
-  class VentanaClinica <<Swing JFrame>> {
-    -clinica : Clinica
-    -trabajos : ExecutorService
-  }
-}
-package app {
-  class Aplicacion {
-    {static} +main(args : String[])
-  }
-}
-Aplicacion ..> VentanaClinica
-Aplicacion ..> Clinica
-VentanaClinica --> Clinica
+Procedimiento --> CodigoClinico : clave
+Facturable ..> CodigoClinico : tipo de retorno
+Propietario --> Nivel : nivel
+Atencion --> Propietario : propietario 1
+Atencion --> Estado : estado
+Atencion *--> Linea : 0..* líneas
+Linea --> Procedimiento : elemento 1
+Catalogo o--> Procedimiento : 0..* elementos
+Catalogo *--> Iterador : clase interna
+Catalogo ..> Regla : filtrar
+Reglas ..> Regla : produce
+Reglas ..> Procedimiento : filtros
+Fabrica ..> Procedimiento : E acotado
+
 @enduml

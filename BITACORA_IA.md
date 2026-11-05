@@ -2,10 +2,10 @@
 
 **Proyecto:** Control de Atenciones de una Clínica Veterinaria  
 **Materia:** Tecnologías de Programación — Miniproyecto Java 3  
-**Periodo documentado:** del 7 de octubre al 3 de noviembre de 2026  
+**Periodo documentado:** del 7 de octubre al 4 de noviembre de 2026  
 **Herramientas registradas:** ChatGPT y OpenAI Codex  
 
-Esta bitácora es una reconstrucción retrospectiva de las consultas y revisiones que quedaron documentadas durante el desarrollo. Los textos de las solicitudes son resúmenes, no transcripciones literales. Se registra tanto la orientación recibida como la ayuda utilizada para revisar o generar fragmentos de código. El objetivo es dejar claro para qué se utilizaron las herramientas y cuáles decisiones se conservaron en el proyecto.
+Esta bitácora es una **reconstrucción retrospectiva** de las consultas y revisiones que quedaron documentadas durante el desarrollo. Los textos de las solicitudes son resúmenes, no transcripciones literales. Se registra tanto la orientación recibida como la ayuda utilizada para revisar o generar fragmentos de código. El objetivo es dejar claro para qué se utilizaron las herramientas y cuáles decisiones se conservaron en el proyecto.
 
 ## Semana 1 · Del 7 al 13 de octubre
 
@@ -80,8 +80,21 @@ Esta bitácora es una reconstrucción retrospectiva de las consultas y revisione
 - **Qué se descartó y por qué:** No se creó un video ni se simuló que ya se había realizado la defensa oral.
 - **Límite de la comprobación final:** Con JDK 21 se verificó la compilación y se ejecutaron T01–T10 más una prueba adicional. T11–T14 requieren repetir la ejecución con la dependencia SQLite JDBC disponible. Por ello, no se afirma que las 14 pruebas hayan sido ejecutadas nuevamente el 3 de noviembre.
 
+## Actualización posterior a la cuarta semana · 4 de noviembre de 2026
+
+### 4 de noviembre — Revisión y actualización de diagramas UML
+
+- **Herramienta:** ChatGPT.
+- **Propósito:** Comprobar que los diagramas del proyecto correspondieran a las clases, relaciones y paquetes de la versión actual del código Java, y corregir las diferencias antes de entregar.
+- **Solicitud resumida:** «Revisa si el diagrama de clases está actualizado conforme a mi proyecto; si no lo está, actualízalo y entrégame los diagramas en formatos PNG y PUML».
+- **Orientación y asistencia:** Se compararon los diagramas anteriores con los archivos Java. Se identificó la ausencia de `InicioEscritorio` y una dependencia representada incorrectamente entre `Aplicacion` y `Clinica`. Con apoyo de ChatGPT se actualizaron el diagrama de clases del modelo, el de servicio y persistencia, y el de arquitectura y dependencias. También se generaron sus versiones visuales `.png` y los archivos editables `.puml` de PlantUML.
+- **Qué se aceptó y por qué:** Se conservaron los tres diagramas actualizados y sus fuentes editables dentro de la carpeta `diagramas/`, y se enlazaron desde el `README.md`, porque permiten explicar mejor la estructura real del sistema y cumplen el requisito de entregar un diagrama de clases actualizado.
+- **Qué se corrigió:** Se incorporó `InicioEscritorio` y se ajustaron las relaciones de inicio, servicio, modelo y persistencia para reflejar el código existente.
+- **Qué no se modificó y por qué:** No se alteró la lógica de las clases Java ni la base de datos durante esta actualización, ya que el objetivo fue corregir la documentación técnica.
+- **Límite reconocido:** Los diagramas reflejan la dependencia circular detectada entre `modelo` y `funcional`; esta observación sobre el criterio A16 sigue pendiente de corregirse en el código.
+
 ## Reflexión final
 
-Las herramientas de IA resultaron especialmente útiles al estudiar **polimorfismo y tarifas, transiciones de estado, concurrencia, JDBC, serialización y reportes con streams**. Además de la orientación conceptual, hubo asistencia para revisar y generar código, por lo que estos apartados requieren estudio y práctica antes de la defensa.
+Las herramientas de IA resultaron especialmente útiles al estudiar **polimorfismo y tarifas, transiciones de estado, concurrencia, JDBC, serialización, reportes con streams y documentación de diagramas UML**. Además de la orientación conceptual, hubo asistencia para revisar y generar código, por lo que estos apartados requieren estudio y práctica antes de la defensa.
 
 La explicación del diseño, la comprensión de los métodos y la capacidad de modificar el programa durante la evaluación corresponden al estudiante. Este documento declara el apoyo utilizado y las limitaciones que se conocen, sin atribuir trabajo a herramientas no verificadas.

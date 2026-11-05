@@ -1,0 +1,220 @@
+@startuml
+title UI, fachada, eventos, concurrencia y persistencia (05/11/2026)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+package app {
+  class "Aplicacion" as Aplicacion <<entrypoint>> {
+    {static} +main(args:String[])
+  }
+  class "DatosEjemplo" as Datos <<script de carga>> {
+    {static} +main(args:String[])
+  }
+  class "PruebasModelo" as Pruebas <<14 pruebas>> {
+    {static} +main(args:String[])
+  }
+  class "PruebasIntegracion" as Integracion <<pruebas adicionales>> {
+    {static} +main(args:String[])
+  }
+  class "DemoModelo" as Demo <<ejemplo de consola>> {
+    {static} +main(args:String[])
+  }
+}
+
+package ui {
+  class "InicioEscritorio" as Inicio <<Swing / FlatLaf>> {
+    {static} +main(args:String[])
+  }
+  class "VentanaClinica" as Ventana <<JFrame>> {
+    -clinica : Clinica
+    -trabajos : ExecutorService
+    -eventos : JTextArea
+    --
+    +VentanaClinica(clinica:Clinica)
+    -ejecutar(mensaje:String,trabajo:Trabajo)
+    -reporte(n:int) : String
+    -cerrar()
+  }
+  interface "VentanaClinica.Trabajo" as Trabajo <<functional interface>> {
+    +ejecutar()
+  }
+  class "VentanaClinica.Vista" as Vista <<record>> {
+    elementos : List<Procedimiento>
+    actores : List<Propietario>
+    registros : List<Atencion>
+    reporte : String
+  }
+}
+
+package servicio {
+  class "Clinica" as Clinica <<fachada / AutoCloseable>> {
+    -catalogo : CatalogoProcedimientos
+    -propietarios : Map
+    -registros : Map
+    -reloj : Supplier<LocalDate>
+    -monitor : MonitorSeguimiento
+    --
+    {static} +abrirArchivo(archivo:Path) : Clinica
+    +registrar(fabrica:FabricaElemento,...) : E
+    +registrarPropietario(...) : Propietario
+    +abrir(idPropietario:int) : Atencion
+    +agregarLinea(...) : Atencion.Linea
+    +iniciar(id:int) / cerrar(id:int) / cancelar(id:int)
+    +ingresosPorTipo() : Map
+    +masRentables(n:int) : List
+    +particionarAtenciones() : Map
+    +revisar() : int
+    +iniciarMonitor(periodoMs:long)
+    +close()
+  }
+  class "Clinica.MonitorSeguimiento" as Monitor <<inner>> {
+    #ejecutarCiclo()
+  }
+}
+
+package concurrencia {
+  abstract class "TareaPeriodica" as Tarea <<abstract Runnable>> {
+    -activa : boolean {volatile}
+    -hilo : Thread
+    --
+    +iniciar(nombreHilo:String)
+    +detener()
+    +activa() : boolean
+    #ejecutarCiclo()
+  }
+}
+
+package eventos {
+  interface "OyenteEvento" as Oyente <<functional interface>> {
+    +notificar(evento:Evento)
+    +luego(siguiente:OyenteEvento) : OyenteEvento
+  }
+  class "Evento" as Evento <<record>> {
+    tipo : TipoEvento
+    mensaje : String
+    instante : LocalDateTime
+    --
+    {static} +de(tipo,mensaje) : Evento
+  }
+  enum "TipoEvento" as TipoEvento <<enum>> {
+    ALTA
+    CAMBIO_ESTADO
+    ALERTA
+    CANCELACION_AUTOMATICA
+  }
+}
+
+package funcional {
+  interface "Regla / FabricaElemento" as Funcional <<interfaces funcionales>> {
+  }
+}
+
+package modelo {
+  class "Clases del dominio" as Dominio <<vista resumida>> {
+    Procedimiento / Atencion
+    Propietario / Catalogo
+    CodigoClinico / Estado / Nivel
+  }
+}
+
+package persistencia {
+  interface "Repositorio<T,K>" as Repositorio <<interface>> {
+    +guardar(entidad:T)
+    +buscar(clave:K) : Optional<T>
+    +todos() : List<T>
+    +eliminar(clave:K) : boolean
+    +existe(clave:K) : boolean
+    +guardarTodos(entidades:Iterable)
+  }
+  interface "Repositorio.MapeadorFila<R>" as Mapeador <<member interface>> {
+    +mapear(rs:ResultSet) : R
+  }
+  class "RepositorioProcedimientoSQLite" as RepoP <<Repository>> {
+    +guardar(e:Procedimiento)
+    +guardarTodos(...)
+    +buscar(clave:CodigoClinico)
+    +todos()
+    +eliminar(clave:CodigoClinico)
+  }
+  class "RepositorioPropietarioSQLite" as RepoProp <<Repository>> {
+    +guardar(p:Propietario)
+    +buscar(id:Integer)
+    +todos()
+    +eliminar(id:Integer)
+  }
+  class "RepositorioAtencionSQLite" as RepoAt <<Repository>> {
+    -propietarios : Repositorio<Propietario,Integer>
+    -elementos : Repositorio<Procedimiento,CodigoClinico>
+    --
+    +guardar(a:Atencion)
+    +buscar(id:Integer)
+    +todos()
+    +eliminar(id:Integer)
+  }
+  class "ConexionSQLite" as Conexion <<AutoCloseable>> {
+    -conexion : Connection
+    --
+    +ConexionSQLite(ruta:String)
+    +conexion() : Connection
+    +enTransaccion(trabajo:TrabajoSQL) : R
+    +close()
+  }
+  interface "ConexionSQLite.TrabajoSQL<R>" as TrabajoSQL <<member interface>> {
+    +ejecutar(c:Connection) : R
+  }
+  class "Respaldo" as Respaldo <<utility>> {
+    {static} +exportar(archivo,...)
+    {static} +importar(archivo) : Contenido
+  }
+  class "Respaldo.Contenido" as Contenido <<record>> {
+    encabezado : String
+    fecha : LocalDateTime
+    catalogo : CatalogoProcedimientos
+    propietarios : List
+    registros : List
+  }
+  class "PersistenciaException" as PersistenciaEx <<RuntimeException>> {
+  }
+}
+
+Aplicacion ..> Inicio : inicia la UI
+Inicio ..> Clinica : abrirArchivo
+Inicio ..> Ventana : crea
+Ventana --> Clinica : fachada única
+Ventana ..> Dominio : tipos de modelo
+Ventana *--> Trabajo : tipo interno
+Ventana *--> Vista : record interno
+Clinica --> Dominio : orquesta
+Clinica ..> Funcional : fábrica / reglas
+Clinica --> RepoP : procedimientos
+Clinica --> Repositorio : propietarios y atenciones
+Clinica ..> Conexion : abrirArchivo
+Clinica ..> Respaldo : respalda/restaura
+Clinica o--> Oyente : suscriptores
+Clinica *--> Monitor : clase interna
+Monitor --|> Tarea
+Oyente ..> Evento : recibe
+Evento --> TipoEvento : tipo
+RepoP ..|> Repositorio
+RepoProp ..|> Repositorio
+RepoAt ..|> Repositorio
+RepoAt --> Repositorio : reutiliza repos de elementos y propietarios
+RepoP --> Conexion : JDBC
+RepoProp --> Conexion : JDBC
+RepoAt --> Conexion : JDBC
+Repositorio *--> Mapeador : miembro
+Conexion *--> TrabajoSQL : miembro
+Respaldo *--> Contenido : record
+Respaldo ..> Dominio : serializa
+RepoP ..> Dominio : reconstruye
+RepoAt ..> Dominio : reconstruye
+RepoProp ..> Dominio : reconstruye
+Datos ..> Clinica
+Pruebas ..> Clinica
+Integracion ..> Clinica
+Demo ..> Clinica
+
+@enduml
